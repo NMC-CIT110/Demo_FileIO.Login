@@ -7,125 +7,155 @@ namespace Demo_FileIO.Theme
     {
         static void Main(string[] args)
         {
-            DisplaySetLogin();
-        }
+            DisplayLoginRegister();
 
+            //
+            // call the application menu here
+            //
+        }
 
         /// <summary>
         /// *****************************************************************
-        /// *                  Set Console Theme Screen                     *
+        /// *                 Login/Register Screen                         *
         /// *****************************************************************
         /// </summary>
-        static void DisplaySetLogin()
+        static void DisplayLoginRegister()
         {
-            (ConsoleColor foregroundColor, ConsoleColor backgroundColor) themeColors;
-            bool themeChosen = false;
+            DisplayScreenHeader("Login/Register");
 
-            //
-            // set current theme from data
-            //
-            themeColors = ReadThemeData();
-            Console.ForegroundColor = themeColors.foregroundColor;
-            Console.BackgroundColor = themeColors.backgroundColor;
-            Console.Clear();
-            DisplayScreenHeader("Set Application Theme");
-
-            Console.WriteLine($"\tCurrent foreground color: {Console.ForegroundColor}");
-            Console.WriteLine($"\tCurrent background color: {Console.BackgroundColor}");
-            Console.WriteLine();
-
-            Console.Write("\tWould you like to change the current theme [ yes | no ]?");
+            Console.Write("\tAre you a registered user [ yes | no ]?");
             if (Console.ReadLine().ToLower() == "yes")
             {
-                do
-                {
-                    themeColors.foregroundColor = GetConsoleColorFromUser("foreground");
-                    themeColors.backgroundColor = GetConsoleColorFromUser("background");
-
-                    //
-                    // set new theme
-                    //
-                    Console.ForegroundColor = themeColors.foregroundColor;
-                    Console.BackgroundColor = themeColors.backgroundColor;
-                    Console.Clear();
-                    DisplayScreenHeader("Set Application Theme");
-                    Console.WriteLine($"\tNew foreground color: {Console.ForegroundColor}");
-                    Console.WriteLine($"\tNew background color: {Console.BackgroundColor}");
-
-                    Console.WriteLine();
-                    Console.Write("\tIs this the theme you would like?");
-                    if (Console.ReadLine().ToLower() == "yes")
-                    {
-                        themeChosen = true;
-                        WriteThemeData(themeColors.foregroundColor, themeColors.backgroundColor);
-                    }
-
-                } while (!themeChosen);
+                DisplayLogin();
             }
+            else
+            {
+                DisplayRegisterUser();
+                DisplayLogin();
+            }
+        }
+
+        /// <summary>
+        /// *****************************************************************
+        /// *                          Login Screen                         *
+        /// *****************************************************************
+        /// </summary>
+        static void DisplayLogin()
+        {
+            string userName;
+            string password;
+            bool validLogin;
+
+            do
+            {
+                DisplayScreenHeader("Login");
+
+                Console.WriteLine();
+                Console.Write("\tEnter your user name:");
+                userName = Console.ReadLine();
+                Console.Write("\tEnter your password:");
+                password = Console.ReadLine();
+
+                validLogin = IsValidLoginInfo(userName, password);
+
+                Console.WriteLine();
+                if (validLogin)
+                {
+                    Console.WriteLine("\tYou are now logged in.");
+                }
+                else
+                {
+                    Console.WriteLine("\tIt appears either the user name or password is incorrect.");
+                    Console.WriteLine("\tPlease try again.");
+                }
+
+                DisplayContinuePrompt();
+            } while (!validLogin);
+        }
+
+        /// <summary>
+        /// check user login
+        /// </summary>
+        /// <param name="userName">user name entered</param>
+        /// <param name="password">password entered</param>
+        /// <returns>true if valid user</returns>
+        static bool IsValidLoginInfo(string userName, string password)
+        {
+            (string userName, string password) userInfo;
+            bool validUser;
+
+            userInfo = ReadLoginInfoData();
+
+            validUser = (userInfo.userName == userName) && (userInfo.password == password);
+
+            return validUser;
+        }
+
+        /// <summary>
+        /// *****************************************************************
+        /// *                       Register Screen                         *
+        /// *****************************************************************
+        /// write login info to data file
+        /// </summary>
+        static void DisplayRegisterUser()
+        {
+            string userName;
+            string password;
+
+            DisplayScreenHeader("Register");
+
+            Console.Write("\tEnter your user name:");
+            userName = Console.ReadLine();
+            Console.Write("\tEnter your password:");
+            password = Console.ReadLine();
+
+            WriteLoginInfoData(userName, password);
+
+            Console.WriteLine();
+            Console.WriteLine("\tYou entered the following information and it has be saved.");
+            Console.WriteLine($"\tUser name: {userName}");
+            Console.WriteLine($"\tPassword: {password}");
+
             DisplayContinuePrompt();
         }
 
         /// <summary>
-        /// get a console color from the user
+        /// read login info from data file
+        /// Note: no error or validation checking
         /// </summary>
-        /// <param name="property">foreground or background</param>
-        /// <returns>user's console color</returns>
-        static ConsoleColor GetConsoleColorFromUser(string property)
+        /// <returns>tuple of user name and password</returns>
+        static (string userName, string password) ReadLoginInfoData()
         {
-            ConsoleColor consoleColor;
-            bool validConsoleColor;
+            string dataPath = @"Data/Logins.txt";
 
-            do
-            {
-                Console.Write($"\tEnter a value for the {property}:");
-                validConsoleColor = Enum.TryParse<ConsoleColor>(Console.ReadLine(), true, out consoleColor);
+            string loginInfoText;
+            string[] loginInfoArray;
+            (string userName, string password) loginInfoTuple;
 
-                if (!validConsoleColor)
-                {
-                    Console.WriteLine("\n\t***** It appears you did not provide a valid console color. Please try again. *****\n");
-                }
-                else
-                {
-                    validConsoleColor = true;
-                }
+            loginInfoText = File.ReadAllText(dataPath);
 
-            } while (!validConsoleColor);
+            //
+            // use the Split method to separate the user name and password into an array
+            //
+            loginInfoArray = loginInfoText.Split(',');
+            loginInfoTuple.userName = loginInfoArray[0];
+            loginInfoTuple.password = loginInfoArray[1];
 
-            return consoleColor;
+            return loginInfoTuple;
         }
 
         /// <summary>
-        /// read theme info from data file
+        /// write login info to data file
         /// Note: no error or validation checking
         /// </summary>
-        /// <returns>tuple of foreground and background</returns>
-        static (ConsoleColor foregroundColor, ConsoleColor backgroundColor) ReadThemeData()
+        static void WriteLoginInfoData(string userName, string password)
         {
-            string dataPath = @"Data/Theme.txt";
-            string[] themeColors;
+            string dataPath = @"Data/Logins.txt";
+            string loginInfoText;
 
-            ConsoleColor foregroundColor;
-            ConsoleColor backgroundColor;
+            loginInfoText = userName + "," + password;
 
-            themeColors = File.ReadAllLines(dataPath);
-
-            Enum.TryParse(themeColors[0], true, out foregroundColor);
-            Enum.TryParse(themeColors[1], true, out backgroundColor);
-
-            return (foregroundColor, backgroundColor);
-        }
-
-        /// <summary>
-        /// write theme info to data file
-        /// Note: no error or validation checking
-        /// </summary>
-        /// <returns>tuple of foreground and background</returns>
-        static void WriteThemeData(ConsoleColor foreground, ConsoleColor background)
-        {
-            string dataPath = @"Data/Theme.txt";
-
-            File.WriteAllText(dataPath, foreground.ToString() + "\n");
-            File.AppendAllText(dataPath, background.ToString());
+            File.WriteAllText(dataPath, loginInfoText);
         }
 
         #region USER INTERFACE
