@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Demo_FileIO.Login
 {
@@ -92,12 +94,22 @@ namespace Demo_FileIO.Login
         /// <returns>true if valid user</returns>
         static bool IsValidLoginInfo(string userName, string password)
         {
-            (string userName, string password) userInfo;
-            bool validUser;
+            List<(string userName, string password)> registeredUserLoginInfo = new List<(string userName, string password)>();
+            bool validUser = false;
 
-            userInfo = ReadLoginInfoData();
+            registeredUserLoginInfo = ReadLoginInfoData();
 
-            validUser = (userInfo.userName == userName) && (userInfo.password == password);
+            //
+            // loop through the list of registered user login tuples and check each one against the login info
+            //
+            foreach ((string userName, string password) userLoginInfo in registeredUserLoginInfo)
+            {
+                if ((userLoginInfo.userName == userName) && (userLoginInfo.password == password))
+                {
+                    validUser = true;
+                    break;
+                }
+            }
 
             return validUser;
         }
@@ -134,25 +146,38 @@ namespace Demo_FileIO.Login
         /// read login info from data file
         /// Note: no error or validation checking
         /// </summary>
-        /// <returns>tuple of user name and password</returns>
-        static (string userName, string password) ReadLoginInfoData()
+        /// <returns>list of tuple of user name and password</returns>
+        static List<(string userName, string password)> ReadLoginInfoData()
         {
             string dataPath = @"Data/Logins.txt";
 
-            string loginInfoText;
             string[] loginInfoArray;
             (string userName, string password) loginInfoTuple;
 
-            loginInfoText = File.ReadAllText(dataPath);
+            List<(string userName, string password)> registeredUserLoginInfo = new List<(string userName, string password)>();
+
+            loginInfoArray = File.ReadAllLines(dataPath);
 
             //
-            // use the Split method to separate the user name and password into an array
+            // loop through the array
+            // split the user name and password into a tuple
+            // add the tuple to the list
             //
-            loginInfoArray = loginInfoText.Split(',');
-            loginInfoTuple.userName = loginInfoArray[0];
-            loginInfoTuple.password = loginInfoArray[1];
+            foreach (string loginInfoText in loginInfoArray)
+            {
+                //
+                // use the Split method to separate the user name and password into an array
+                //
+                loginInfoArray = loginInfoText.Split(',');
 
-            return loginInfoTuple;
+                loginInfoTuple.userName = loginInfoArray[0];
+                loginInfoTuple.password = loginInfoArray[1];
+
+                registeredUserLoginInfo.Add(loginInfoTuple);
+
+            }
+
+            return registeredUserLoginInfo;
         }
 
         /// <summary>
@@ -166,7 +191,10 @@ namespace Demo_FileIO.Login
 
             loginInfoText = userName + "," + password;
 
-            File.WriteAllText(dataPath, loginInfoText);
+            //
+            // use the AppendAllText method to not overwrite the existing logins
+            //
+            File.AppendAllText(dataPath, loginInfoText);
         }
 
         #region USER INTERFACE
